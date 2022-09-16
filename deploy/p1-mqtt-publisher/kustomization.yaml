@@ -1,0 +1,7 @@
+configMapGenerator:
+- name: p1-mqtt-publisher
+  envs:
+  - config.env
+
+resources:
+- deployment.yaml

@@ -1,0 +1,8 @@
+configMapGenerator:
+- name: mosquitto
+  files:
+  - mosquitto.conf
+
+resources:
+- deployment.yaml
+- service.yaml

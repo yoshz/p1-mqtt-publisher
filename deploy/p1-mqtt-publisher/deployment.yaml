@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p1-mqtt-publisher
+  labels:
+    app.kubernetes.io/name: p1-mqtt-publisher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: p1-mqtt-publisher
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: p1-mqtt-publisher
+    spec:
+      containers:
+      - name: p1-mqtt-publisher
+        image: yoshz/p1-mqtt-publisher:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 64Mi
+          requests:
+            cpu: 100m
+            memory: 32Mi
+        envFrom:
+        - configMapRef:
+            name: p1-mqtt-publisher
+        volumeMounts:
+        - mountPath: /dev
+          name: dev
+        securityContext:
+          privileged: true
+      volumes:
+      - name: dev
+        hostPath:
+          path: /dev
