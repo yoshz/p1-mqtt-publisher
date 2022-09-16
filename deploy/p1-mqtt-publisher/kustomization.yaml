@@ -3,5 +3,9 @@ configMapGenerator:
   envs:
   - config.env
 
+images:
+- name: yoshz/p1-mqtt-publisher
+  newTag: v0.1.0
+
 resources:
 - deployment.yaml
