@@ -20,19 +20,23 @@ var (
 	mqttPassword    string = getEnv("MQTT_PASSWORD", "")
 	mqttTopic       string = getEnv("MQTT_TOPIC", "energy/meters")
 	serialDevice    string = os.Getenv("SERIAL_DEVICE")
+	location        string = getEnv("LOCATION", "home")
 	publishInterval int64  = 60
 	reader          *bufio.Reader
 	message         EnergyMeterMessage
 )
 
 type EnergyMeterMessage struct {
-	PowerDraw   float64 `json:"powerDraw"`
-	PowerMeter1 float64 `json:"powerMeter1"`
-	PowerMeter2 float64 `json:"powerMeter2"`
-	GasMeter    float64 `json:"gasMeter"`
+	Time        time.Time `json:"time"`
+	Location    string    `json:"location"`
+	PowerDraw   float64   `json:"powerDraw"`
+	PowerMeter1 float64   `json:"powerMeter1"`
+	PowerMeter2 float64   `json:"powerMeter2"`
+	GasMeter    float64   `json:"gasMeter"`
 }
 
 func main() {
+	message.Location = location
 
 	if serialDevice != "" {
 		fmt.Println("gonna use serial device")
@@ -84,6 +88,7 @@ func main() {
 
 func publish(client MQTT.Client) {
 	for {
+		message.Time = time.Now()
 		payload, err := json.Marshal(message)
 		if err != nil {
 			panic(err)
