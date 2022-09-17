@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	log "github.com/sirupsen/logrus"
 	"github.com/tarm/serial"
 )
 
@@ -36,25 +36,25 @@ type EnergyMeterMessage struct {
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
+
 	message.Location = location
 
 	if serialDevice != "" {
-		fmt.Println("gonna use serial device")
+		log.Printf("Using serial device: %s", serialDevice)
 		config := &serial.Config{Name: serialDevice, Baud: 115200}
 
 		usb, err := serial.OpenPort(config)
 		if err != nil {
-			fmt.Printf("Could not open serial interface: %s", err)
-			return
+			log.Fatalf("Could not open serial device: %s", err)
 		}
 
 		reader = bufio.NewReader(usb)
 	} else {
-		fmt.Println("Using example file")
+		log.Println("Using example file")
 		file, err := os.Open("examples/fulllist.txt")
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatalln(err)
 		}
 		defer file.Close()
 		reader = bufio.NewReader(file)
@@ -74,14 +74,14 @@ func main() {
 
 	client := MQTT.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
+		log.Fatalln(token.Error())
 	}
-	fmt.Println("Connected to MQTT broker")
+	log.Println("Connected to MQTT broker")
 
 	// sleeping 10 seconds to prevent uninitialized scrapes
 	time.Sleep(10 * time.Second)
 
-	fmt.Println("now serving metrics")
+	log.Println("Now publishing metrics")
 
 	publish(client)
 }
@@ -91,13 +91,11 @@ func publish(client MQTT.Client) {
 		message.Time = time.Now()
 		payload, err := json.Marshal(message)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 
-		fmt.Println(string(payload[:]))
-
 		if token := client.Publish(mqttTopic, 1, false, payload); token.Wait() && token.Error() != nil {
-			panic(token.Error())
+			log.Fatalln(token.Error())
 		}
 
 		time.Sleep(time.Duration(publishInterval) * time.Second)
@@ -109,35 +107,35 @@ func reading(source io.Reader) {
 	for {
 		rawLine, err := reader.ReadBytes('\x0a')
 		if err != nil {
-			fmt.Println(err)
+			log.Errorln(err)
 			return
 		}
 		line = string(rawLine[:])
 		if strings.HasPrefix(line, "1-0:1.8.1") {
 			tmpVal, err := strconv.ParseFloat(line[10:20], 64)
 			if err != nil {
-				fmt.Println(err)
+				log.Errorln(err)
 				continue
 			}
 			message.PowerMeter1 = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "1-0:1.8.2") {
 			tmpVal, err := strconv.ParseFloat(line[10:20], 64)
 			if err != nil {
-				fmt.Println(err)
+				log.Errorln(err)
 				continue
 			}
 			message.PowerMeter2 = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "0-1:24.2.1") {
 			tmpVal, err := strconv.ParseFloat(line[26:35], 64)
 			if err != nil {
-				fmt.Println(err)
+				log.Errorln(err)
 				continue
 			}
 			message.GasMeter = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "1-0:1.7.0") {
 			tmpVal, err := strconv.ParseFloat(line[10:16], 64)
 			if err != nil {
-				fmt.Println(err)
+				log.Errorln(err)
 				continue
 			}
 			message.PowerDraw = int64(tmpVal * 1000)
