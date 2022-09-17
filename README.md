@@ -20,6 +20,23 @@ Run the P1-MQTT-Publisher
 go run main.go
 ```
 
+## JSON message
+
+Example message:
+```json
+{
+    "time": "2022-01-02T03:04:05.678910123+01:00",
+    "location": "home",
+    "powerDraw": 532,
+    "powerMeter1": 123456,
+    "powerMeter2": 78901,
+    "gasMeter": 56723
+}
+```
+
+Power is in `watt`.
+Gas is in `cm3`.
+
 ## Environment variables
 
  * `SERIAL_DEVICE`: the device that needs to be read (default is /dev/ttyUSB0)

@@ -29,10 +29,10 @@ var (
 type EnergyMeterMessage struct {
 	Time        time.Time `json:"time"`
 	Location    string    `json:"location"`
-	PowerDraw   float64   `json:"powerDraw"`
-	PowerMeter1 float64   `json:"powerMeter1"`
-	PowerMeter2 float64   `json:"powerMeter2"`
-	GasMeter    float64   `json:"gasMeter"`
+	PowerDraw   int64     `json:"powerDraw"`
+	PowerMeter1 int64     `json:"powerMeter1"`
+	PowerMeter2 int64     `json:"powerMeter2"`
+	GasMeter    int64     `json:"gasMeter"`
 }
 
 func main() {
@@ -96,7 +96,7 @@ func publish(client MQTT.Client) {
 
 		fmt.Println(string(payload[:]))
 
-		if token := client.Publish(mqttTopic, 0, false, payload); token.Wait() && token.Error() != nil {
+		if token := client.Publish(mqttTopic, 1, false, payload); token.Wait() && token.Error() != nil {
 			panic(token.Error())
 		}
 
@@ -119,28 +119,28 @@ func reading(source io.Reader) {
 				fmt.Println(err)
 				continue
 			}
-			message.PowerMeter1 = tmpVal
+			message.PowerMeter1 = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "1-0:1.8.2") {
 			tmpVal, err := strconv.ParseFloat(line[10:20], 64)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			message.PowerMeter2 = tmpVal
+			message.PowerMeter2 = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "0-1:24.2.1") {
 			tmpVal, err := strconv.ParseFloat(line[26:35], 64)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			message.GasMeter = tmpVal
+			message.GasMeter = int64(tmpVal * 1000)
 		} else if strings.HasPrefix(line, "1-0:1.7.0") {
 			tmpVal, err := strconv.ParseFloat(line[10:16], 64)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
-			message.PowerDraw = tmpVal
+			message.PowerDraw = int64(tmpVal * 1000)
 		}
 		if serialDevice == "" {
 			time.Sleep(200 * time.Millisecond)
