@@ -35,7 +35,7 @@ Example message:
 ```
 
 Power is in `watt`.
-Gas is in `cm3`.
+Gas is in `dm3`.
 
 ## Environment variables
 
@@ -61,4 +61,49 @@ kubectl apply -n p1 -k deploy/mosquitto
 
 # install p1-mqtt-publisher
 kubectl apply -n p1 -k deploy/p1-mqtt-publisher
+```
+
+## Home Assistant
+
+To make the meter data available in Home Assistant, enable the MQTT integration
+and add the following lines to the `configuration.yaml`:
+
+```yaml
+mqtt:
+  sensor:
+    - state_topic: "energy/meters"
+      name: "Current Power Draw"
+      object_id: power_draw
+      expire_after: 60
+      device_class: energy
+      state_class: measurement
+      unit_of_measurement: "w"
+      value_template: "{{ value_json['powerDraw'] }}"
+
+    - state_topic: "energy/meters"
+      name: "Power Meter Tariff 1"
+      object_id: power_meter_tariff_1
+      expire_after: 60
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json['powerMeter1'] / 1000 }}"
+
+    - state_topic: "energy/meters"
+      name: "Power Meter Tariff 2"
+      object_id: power_meter_tariff_2
+      expire_after: 60
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "kWh"
+      value_template: "{{ value_json['powerMeter2'] / 1000 }}"
+
+    - state_topic: "energy/meters"
+      name: "Gas Meter"
+      object_id: gas_meter
+      expire_after: 60
+      device_class: energy
+      state_class: total_increasing
+      unit_of_measurement: "m³"
+      value_template: "{{ value_json['gasMeter'] / 1000 }}"
 ```
